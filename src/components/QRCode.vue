@@ -17,16 +17,15 @@
       this.fetchQRCode();
     },
     methods: {
-      fetchQRCode() {
-        fetch('http://localhost:3000/qrcode')
-          .then(response => response.text())
-          .then(data => {
-            const imgTag = data.match(/<img src="(.*?)" alt="QR Code" \/>/);
-            if (imgTag && imgTag[1]) {
-              this.qrCodeSrc = imgTag[1];
-            }
-          });
+      async fetchQRCode() {
+      try {
+        const response = await fetch('http://10.0.88.221:3000/qrcode');
+        const data = await response.json();
+        this.qrCodeSrc = data.qrCode;
+      } catch (error) {
+        console.error('Error fetching QR Code:', error);
       }
+    }
     }
   };
   </script>

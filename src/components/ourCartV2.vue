@@ -1,4 +1,4 @@
-<!-- src/components/CartV3.vue -->
+<!-- src/components/CartV2.vue -->
 <template>
   <div>
     <h1>Shopping Cart</h1>
@@ -11,32 +11,38 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
-
 export default {
   data() {
     return {
+      ws: null,
+      cart: [],
       newItemName: ''
     };
   },
-  computed: {
-    ...mapState(['cart'])
-  },
   created() {
-    this.$store.dispatch('initializeWebSocket');
+    this.ws = new WebSocket('ws://10.0.88.221:3000');
+
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'cart') {
+        this.cart = data.cart;
+      }
+    };
   },
   methods: {
-    ...mapActions(['initializeWebSocket', 'addItemToCart']),
     addItem() {
       if (this.newItemName.trim()) {
         const item = {
           id: Date.now(),
           name: this.newItemName.trim()
         };
-        this.$store.dispatch('addItemToCart', item);
+        this.ws.send(JSON.stringify({ type: 'add_item', item }));
         this.newItemName = '';
       }
     }
+  },
+  beforeDestroy() {
+    this.ws.close();
   }
 };
 </script>

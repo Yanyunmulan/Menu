@@ -1,65 +1,29 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+// store.js V3
+import Vue from 'vue';
+import Vuex from 'vuex';
+import { io } from 'socket.io-client';
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
-const state = {
-  menu: [],
-  ws: null
-}
+const socket = io('http://10.0.88.221:3000');
 
-const mutations = {
-  SET_MENU: (state, menu) => {
-    state.menu = menu
+export default new Vuex.Store({
+  state: {
+    cart: []
   },
-  ADD_ITEM: (state, item) => {
-    state.menu.push(item)
+  mutations: {
+    UPDATE_CART(state, cart) {
+      state.cart = cart;
+    }
   },
-  SET_WEBSOCKET: (state, ws) => {
-    state.ws = ws
-  }
-}
-
-const actions = {
-  initializeWebSocket({ commit, dispatch }) {
-    const ws = new WebSocket('ws://localhost:8080')
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data)
-      if (message.type === 'updateMenu') {
-        commit('SET_MENU', message.menu)
-      } else if (message.type === 'addItem') {
-        commit('ADD_ITEM', message.item)
-      }
-    }
-
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-    }
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      // Reconnect after a delay
-      setTimeout(() => {
-        dispatch('initializeWebSocket')
-      }, 1000)
-    }
-
-    commit('SET_WEBSOCKET', ws)
-  },
-  addItem({ commit, state }, item) {
-    commit('ADD_ITEM', item)
-    // Send the updated item to the server
-    if (state.ws) {
-      state.ws.send(JSON.stringify({ type: 'addItem', item }))
+  actions: {
+    initializeWebSocket({ commit }) {
+      socket.on('cart', (cart) => {
+        commit('UPDATE_CART', cart);
+      });
+    },
+    addItemToCart(_, item) {
+      socket.emit('add_item', item);
     }
   }
-}
-
-const store = new Vuex.Store({
-  state,
-  mutations,
-  actions
-})
-
-export default store
+});
